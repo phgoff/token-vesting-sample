@@ -2,7 +2,7 @@ import useConnector from "@/store/useConnector";
 import { WalletType } from "@/types/wallet.type";
 
 const ConnectWallet = () => {
-  const { connectMetamask, checkConnect } = useConnector();
+  const { connectMetamask, checkConnection } = useConnector();
 
   const walletProviders = [
     {
@@ -31,7 +31,7 @@ const ConnectWallet = () => {
   const handleConnectMetamask = async () => {
     try {
       await connectMetamask();
-      await checkConnect();
+      await checkConnection();
     } catch (err) {
       console.log(err);
     }

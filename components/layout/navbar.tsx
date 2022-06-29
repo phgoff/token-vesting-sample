@@ -4,7 +4,6 @@ import ConnectWallet from "../connect/connect-wallet";
 
 const Navbar = () => {
   const { isConnect, currentAccount } = useConnector();
-  console.log("isConnect", isConnect);
 
   return (
     <div className="h-nav bg-orange-500 flex justify-between items-center px-10">

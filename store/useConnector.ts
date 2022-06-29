@@ -1,7 +1,7 @@
 import create from "zustand";
 
 import { WalletType } from "@/types/wallet.type";
-import STORAGE_KEY from "@/config/constants/storageKey";
+import STORAGE_KEY from "@/constants/storage-key";
 import localStorageService from "@/services/localStorage.service";
 
 const initialStore = {
@@ -9,13 +9,12 @@ const initialStore = {
   walletType: "",
   errorMessage: "",
   currentAccount: "",
-  accountChange: "",
   myAccount: "",
 };
 
 const useConnector = create((set: any, get: any) => ({
   ...initialStore,
-  checkConnect: async () => {
+  checkConnectionion: async () => {
     if (typeof window !== "undefined") {
       const isConnect = localStorageService.getItem(STORAGE_KEY.CONNECTED);
       const walletType = localStorageService.getItem(STORAGE_KEY.WALLET_TYPE);
@@ -62,15 +61,10 @@ const useConnector = create((set: any, get: any) => ({
   getAccountChangeMetamask: async () => {
     if (typeof window.ethereum !== "undefined") {
       await window.ethereum.on("accountsChanged", (accounts: unknown) => {
-        console.log("accounts", accounts);
-
         const [accountChange] = accounts as string[];
         if (accountChange) {
-          set({ accountChange });
+          set({ currentAccount: accountChange });
         }
-        set({ isConnect: false });
-        localStorageService.removeItem(STORAGE_KEY.CONNECTED);
-        localStorageService.removeItem(STORAGE_KEY.WALLET_TYPE);
       });
     }
   },

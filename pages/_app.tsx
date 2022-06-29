@@ -10,10 +10,10 @@ declare global {
 }
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const checkConnect = useConnector((state) => state.checkConnect);
+  const checkConnection = useConnector((state) => state.checkConnectionion);
 
   useEffect(() => {
-    checkConnect();
+    checkConnection();
   }, []);
 
   return <Component {...pageProps} />;
