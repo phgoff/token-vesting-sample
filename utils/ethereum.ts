@@ -4,7 +4,7 @@ export const ethereum = () =>
   typeof window !== "undefined" ? (window as any).ethereum : null;
 
 export const getProvider = () => {
-  const url = `https://rpc.bitkubchain.io`;
+  const url = `https://rpc-testnet.bitkubchain.io`;
   return new ethers.providers.JsonRpcProvider(url);
 };
 

@@ -18,10 +18,11 @@ export const getAddressList = <T extends NetworkID>(networkID: T) => {
 };
 
 const bkc = {
-  vesting: "0x0000000000000000000000000000000000000000",
+  TT: null,
+  TokenVesting: null,
 };
 
 const bkcTest = {
   TT: "0xFc1E799dbA823e93e482e70B1A8d06AF1ffE2be3",
-  TokenVesting: "0xb221E4E9A770D3a8476Cf6f94CAE904878d8f1bD",
+  TokenVesting: "0x2e0c29003b546cfaC6c94489BEA1c58c878513e7",
 };

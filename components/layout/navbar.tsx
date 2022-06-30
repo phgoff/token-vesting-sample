@@ -1,4 +1,4 @@
-import useConnector from "@/store/useConnector";
+import useConnector from "@/store/use-connector";
 import { truncateAddress } from "@/utils/common";
 import ConnectWallet from "../connect/connect-wallet";
 

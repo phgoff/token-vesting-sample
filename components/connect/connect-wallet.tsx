@@ -1,4 +1,4 @@
-import useConnector from "@/store/useConnector";
+import useConnector from "@/store/use-connector";
 import { WalletType } from "@/types/wallet.type";
 
 const ConnectWallet = () => {

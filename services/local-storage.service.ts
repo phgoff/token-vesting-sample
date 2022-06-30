@@ -1,4 +1,4 @@
-const getItem = <T>(key: string) => {
+const getItem = (key: string) => {
   const value = localStorage.getItem(key);
   if (value) {
     return JSON.parse(value);
@@ -6,7 +6,10 @@ const getItem = <T>(key: string) => {
   return;
 };
 
-const setItem = <T>(key: string, value: Object | Array<T> | string | Number) => {
+const setItem = <T>(
+  key: string,
+  value: Object | Array<T> | string | Number
+) => {
   const data = JSON.stringify(value);
   localStorage.setItem(key, data);
 };

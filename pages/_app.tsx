@@ -1,16 +1,17 @@
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
-import useConnector from "@/store/useConnector";
+import useConnector from "@/store/use-connector";
 import { useEffect } from "react";
+import { MetaMaskInpageProvider } from "@metamask/providers";
 
 declare global {
   interface Window {
-    ethereum: any;
+    ethereum: MetaMaskInpageProvider;
   }
 }
 
 function MyApp({ Component, pageProps }: AppProps) {
-  const checkConnection = useConnector((state) => state.checkConnectionion);
+  const { checkConnection } = useConnector();
 
   useEffect(() => {
     checkConnection();

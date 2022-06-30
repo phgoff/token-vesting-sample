@@ -21,6 +21,7 @@ import type { TypedEventFilter, TypedEvent, TypedListener } from "./common";
 
 interface TokenVestingInterface extends ethers.utils.Interface {
   functions: {
+    "_token()": FunctionFragment;
     "computeNextVestingScheduleIdForHolder(address)": FunctionFragment;
     "computeReleasableAmount(bytes32)": FunctionFragment;
     "computeReleasableAmountByBeneficiaryAndIndex(address,uint256)": FunctionFragment;
@@ -28,16 +29,17 @@ interface TokenVestingInterface extends ethers.utils.Interface {
     "createVestingSchedule(address,uint256,uint256,uint256,uint256,uint256)": FunctionFragment;
     "getLastVestingScheduleForHolder(address)": FunctionFragment;
     "getLastVestingScheduleIdForHolder(address)": FunctionFragment;
-    "getToken()": FunctionFragment;
     "getWithdrawableAmount()": FunctionFragment;
     "owner()": FunctionFragment;
     "release(bytes32,uint256)": FunctionFragment;
     "renounceOwnership()": FunctionFragment;
     "revoke(bytes32)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
+    "vestingSchedulesTotalAmount()": FunctionFragment;
     "withdraw(uint256)": FunctionFragment;
   };
 
+  encodeFunctionData(functionFragment: "_token", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "computeNextVestingScheduleIdForHolder",
     values: [string]
@@ -73,7 +75,6 @@ interface TokenVestingInterface extends ethers.utils.Interface {
     functionFragment: "getLastVestingScheduleIdForHolder",
     values: [string]
   ): string;
-  encodeFunctionData(functionFragment: "getToken", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "getWithdrawableAmount",
     values?: undefined
@@ -93,10 +94,15 @@ interface TokenVestingInterface extends ethers.utils.Interface {
     values: [string]
   ): string;
   encodeFunctionData(
+    functionFragment: "vestingSchedulesTotalAmount",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "withdraw",
     values: [BigNumberish]
   ): string;
 
+  decodeFunctionResult(functionFragment: "_token", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "computeNextVestingScheduleIdForHolder",
     data: BytesLike
@@ -125,7 +131,6 @@ interface TokenVestingInterface extends ethers.utils.Interface {
     functionFragment: "getLastVestingScheduleIdForHolder",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "getToken", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "getWithdrawableAmount",
     data: BytesLike
@@ -141,22 +146,46 @@ interface TokenVestingInterface extends ethers.utils.Interface {
     functionFragment: "transferOwnership",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "vestingSchedulesTotalAmount",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
 
   events: {
     "OwnershipTransferred(address,address)": EventFragment;
-    "Revoked(bytes32)": EventFragment;
+    "TokenWithdrew(uint256)": EventFragment;
+    "VestingScheduleCreated(bytes32)": EventFragment;
+    "VestingScheduleReleased(bytes32)": EventFragment;
+    "VestingScheduleRevoked(bytes32)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "Revoked"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "TokenWithdrew"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "VestingScheduleCreated"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "VestingScheduleReleased"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "VestingScheduleRevoked"): EventFragment;
 }
 
 export type OwnershipTransferredEvent = TypedEvent<
   [string, string] & { previousOwner: string; newOwner: string }
 >;
 
-export type RevokedEvent = TypedEvent<[string] & { vestingScheduleId: string }>;
+export type TokenWithdrewEvent = TypedEvent<
+  [BigNumber] & { amount: BigNumber }
+>;
+
+export type VestingScheduleCreatedEvent = TypedEvent<
+  [string] & { vestingScheduleId: string }
+>;
+
+export type VestingScheduleReleasedEvent = TypedEvent<
+  [string] & { vestingScheduleId: string }
+>;
+
+export type VestingScheduleRevokedEvent = TypedEvent<
+  [string] & { vestingScheduleId: string }
+>;
 
 export class TokenVesting extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
@@ -202,25 +231,27 @@ export class TokenVesting extends BaseContract {
   interface: TokenVestingInterface;
 
   functions: {
+    _token(overrides?: CallOverrides): Promise<[string]>;
+
     computeNextVestingScheduleIdForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<[string]>;
 
     computeReleasableAmount(
-      vestingScheduleId: BytesLike,
+      _vestingScheduleId: BytesLike,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
     computeReleasableAmountByBeneficiaryAndIndex(
-      beneficiary: string,
-      index: BigNumberish,
+      _beneficiary: string,
+      _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[BigNumber]>;
 
     computeVestingScheduleIdForAddressAndIndex(
-      holder: string,
-      index: BigNumberish,
+      _holder: string,
+      _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<[string]>;
 
@@ -235,7 +266,7 @@ export class TokenVesting extends BaseContract {
     ): Promise<ContractTransaction>;
 
     getLastVestingScheduleForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<
       [
@@ -262,19 +293,17 @@ export class TokenVesting extends BaseContract {
     >;
 
     getLastVestingScheduleIdForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<[string]>;
-
-    getToken(overrides?: CallOverrides): Promise<[string]>;
 
     getWithdrawableAmount(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
 
     release(
-      vestingScheduleId: BytesLike,
-      amount: BigNumberish,
+      _vestingScheduleId: BytesLike,
+      _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -283,7 +312,7 @@ export class TokenVesting extends BaseContract {
     ): Promise<ContractTransaction>;
 
     revoke(
-      vestingScheduleId: BytesLike,
+      _vestingScheduleId: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
@@ -292,31 +321,37 @@ export class TokenVesting extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
 
+    vestingSchedulesTotalAmount(
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     withdraw(
-      amount: BigNumberish,
+      _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<ContractTransaction>;
   };
 
+  _token(overrides?: CallOverrides): Promise<string>;
+
   computeNextVestingScheduleIdForHolder(
-    holder: string,
+    _holder: string,
     overrides?: CallOverrides
   ): Promise<string>;
 
   computeReleasableAmount(
-    vestingScheduleId: BytesLike,
+    _vestingScheduleId: BytesLike,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
   computeReleasableAmountByBeneficiaryAndIndex(
-    beneficiary: string,
-    index: BigNumberish,
+    _beneficiary: string,
+    _index: BigNumberish,
     overrides?: CallOverrides
   ): Promise<BigNumber>;
 
   computeVestingScheduleIdForAddressAndIndex(
-    holder: string,
-    index: BigNumberish,
+    _holder: string,
+    _index: BigNumberish,
     overrides?: CallOverrides
   ): Promise<string>;
 
@@ -331,7 +366,7 @@ export class TokenVesting extends BaseContract {
   ): Promise<ContractTransaction>;
 
   getLastVestingScheduleForHolder(
-    holder: string,
+    _holder: string,
     overrides?: CallOverrides
   ): Promise<
     [
@@ -356,19 +391,17 @@ export class TokenVesting extends BaseContract {
   >;
 
   getLastVestingScheduleIdForHolder(
-    holder: string,
+    _holder: string,
     overrides?: CallOverrides
   ): Promise<string>;
-
-  getToken(overrides?: CallOverrides): Promise<string>;
 
   getWithdrawableAmount(overrides?: CallOverrides): Promise<BigNumber>;
 
   owner(overrides?: CallOverrides): Promise<string>;
 
   release(
-    vestingScheduleId: BytesLike,
-    amount: BigNumberish,
+    _vestingScheduleId: BytesLike,
+    _amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -377,7 +410,7 @@ export class TokenVesting extends BaseContract {
   ): Promise<ContractTransaction>;
 
   revoke(
-    vestingScheduleId: BytesLike,
+    _vestingScheduleId: BytesLike,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
@@ -386,31 +419,35 @@ export class TokenVesting extends BaseContract {
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
+  vestingSchedulesTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
+
   withdraw(
-    amount: BigNumberish,
+    _amount: BigNumberish,
     overrides?: Overrides & { from?: string | Promise<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
+    _token(overrides?: CallOverrides): Promise<string>;
+
     computeNextVestingScheduleIdForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<string>;
 
     computeReleasableAmount(
-      vestingScheduleId: BytesLike,
+      _vestingScheduleId: BytesLike,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     computeReleasableAmountByBeneficiaryAndIndex(
-      beneficiary: string,
-      index: BigNumberish,
+      _beneficiary: string,
+      _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     computeVestingScheduleIdForAddressAndIndex(
-      holder: string,
-      index: BigNumberish,
+      _holder: string,
+      _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<string>;
 
@@ -425,7 +462,7 @@ export class TokenVesting extends BaseContract {
     ): Promise<void>;
 
     getLastVestingScheduleForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<
       [
@@ -450,26 +487,24 @@ export class TokenVesting extends BaseContract {
     >;
 
     getLastVestingScheduleIdForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<string>;
-
-    getToken(overrides?: CallOverrides): Promise<string>;
 
     getWithdrawableAmount(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
     release(
-      vestingScheduleId: BytesLike,
-      amount: BigNumberish,
+      _vestingScheduleId: BytesLike,
+      _amount: BigNumberish,
       overrides?: CallOverrides
     ): Promise<void>;
 
     renounceOwnership(overrides?: CallOverrides): Promise<void>;
 
     revoke(
-      vestingScheduleId: BytesLike,
+      _vestingScheduleId: BytesLike,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -478,7 +513,9 @@ export class TokenVesting extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
-    withdraw(amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
+    vestingSchedulesTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
+
+    withdraw(_amount: BigNumberish, overrides?: CallOverrides): Promise<void>;
   };
 
   filters: {
@@ -498,35 +535,61 @@ export class TokenVesting extends BaseContract {
       { previousOwner: string; newOwner: string }
     >;
 
-    "Revoked(bytes32)"(
+    "TokenWithdrew(uint256)"(
+      amount?: null
+    ): TypedEventFilter<[BigNumber], { amount: BigNumber }>;
+
+    TokenWithdrew(
+      amount?: null
+    ): TypedEventFilter<[BigNumber], { amount: BigNumber }>;
+
+    "VestingScheduleCreated(bytes32)"(
       vestingScheduleId?: null
     ): TypedEventFilter<[string], { vestingScheduleId: string }>;
 
-    Revoked(
+    VestingScheduleCreated(
+      vestingScheduleId?: null
+    ): TypedEventFilter<[string], { vestingScheduleId: string }>;
+
+    "VestingScheduleReleased(bytes32)"(
+      vestingScheduleId?: null
+    ): TypedEventFilter<[string], { vestingScheduleId: string }>;
+
+    VestingScheduleReleased(
+      vestingScheduleId?: null
+    ): TypedEventFilter<[string], { vestingScheduleId: string }>;
+
+    "VestingScheduleRevoked(bytes32)"(
+      vestingScheduleId?: null
+    ): TypedEventFilter<[string], { vestingScheduleId: string }>;
+
+    VestingScheduleRevoked(
       vestingScheduleId?: null
     ): TypedEventFilter<[string], { vestingScheduleId: string }>;
   };
 
   estimateGas: {
+    _token(overrides?: CallOverrides): Promise<BigNumber>;
+
     computeNextVestingScheduleIdForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     computeReleasableAmount(
-      vestingScheduleId: BytesLike,
+      _vestingScheduleId: BytesLike,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     computeReleasableAmountByBeneficiaryAndIndex(
-      beneficiary: string,
-      index: BigNumberish,
+      _beneficiary: string,
+      _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     computeVestingScheduleIdForAddressAndIndex(
-      holder: string,
-      index: BigNumberish,
+      _holder: string,
+      _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
@@ -541,24 +604,22 @@ export class TokenVesting extends BaseContract {
     ): Promise<BigNumber>;
 
     getLastVestingScheduleForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
     getLastVestingScheduleIdForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<BigNumber>;
-
-    getToken(overrides?: CallOverrides): Promise<BigNumber>;
 
     getWithdrawableAmount(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     release(
-      vestingScheduleId: BytesLike,
-      amount: BigNumberish,
+      _vestingScheduleId: BytesLike,
+      _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -567,7 +628,7 @@ export class TokenVesting extends BaseContract {
     ): Promise<BigNumber>;
 
     revoke(
-      vestingScheduleId: BytesLike,
+      _vestingScheduleId: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
@@ -576,32 +637,36 @@ export class TokenVesting extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
 
+    vestingSchedulesTotalAmount(overrides?: CallOverrides): Promise<BigNumber>;
+
     withdraw(
-      amount: BigNumberish,
+      _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
+    _token(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     computeNextVestingScheduleIdForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     computeReleasableAmount(
-      vestingScheduleId: BytesLike,
+      _vestingScheduleId: BytesLike,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     computeReleasableAmountByBeneficiaryAndIndex(
-      beneficiary: string,
-      index: BigNumberish,
+      _beneficiary: string,
+      _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     computeVestingScheduleIdForAddressAndIndex(
-      holder: string,
-      index: BigNumberish,
+      _holder: string,
+      _index: BigNumberish,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
@@ -616,16 +681,14 @@ export class TokenVesting extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     getLastVestingScheduleForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
 
     getLastVestingScheduleIdForHolder(
-      holder: string,
+      _holder: string,
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
-
-    getToken(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     getWithdrawableAmount(
       overrides?: CallOverrides
@@ -634,8 +697,8 @@ export class TokenVesting extends BaseContract {
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     release(
-      vestingScheduleId: BytesLike,
-      amount: BigNumberish,
+      _vestingScheduleId: BytesLike,
+      _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -644,7 +707,7 @@ export class TokenVesting extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     revoke(
-      vestingScheduleId: BytesLike,
+      _vestingScheduleId: BytesLike,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -653,8 +716,12 @@ export class TokenVesting extends BaseContract {
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
 
+    vestingSchedulesTotalAmount(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     withdraw(
-      amount: BigNumberish,
+      _amount: BigNumberish,
       overrides?: Overrides & { from?: string | Promise<string> }
     ): Promise<PopulatedTransaction>;
   };

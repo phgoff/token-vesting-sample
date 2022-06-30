@@ -1,8 +1,8 @@
 import create from "zustand";
-
 import { WalletType } from "@/types/wallet.type";
 import STORAGE_KEY from "@/constants/storage-key";
-import localStorageService from "@/services/localStorage.service";
+import localStorageService from "@/services/local-storage.service";
+import { NetworkID } from "@/constants/network-id";
 
 const initialStore = {
   isConnect: false,
@@ -10,18 +10,32 @@ const initialStore = {
   errorMessage: "",
   currentAccount: "",
   myAccount: "",
+  chainId: 0 as NetworkID,
 };
+type InitialStoreType = typeof initialStore;
+interface IUseConnector extends InitialStoreType {
+  checkConnection: () => Promise<void>;
+  connectMetamask: () => Promise<void>;
+  getAccountMetamask: () => Promise<void>;
+  getAccountChangeMetamask: () => Promise<void>;
+  getChainId: () => Promise<void>;
+  getChainIdChangeMetamask: () => Promise<void>;
+}
 
-const useConnector = create((set: any, get: any) => ({
+const useConnector = create<IUseConnector>((set, get) => ({
   ...initialStore,
-  checkConnectionion: async () => {
+  checkConnection: async () => {
     if (typeof window !== "undefined") {
       const isConnect = localStorageService.getItem(STORAGE_KEY.CONNECTED);
       const walletType = localStorageService.getItem(STORAGE_KEY.WALLET_TYPE);
+      const chainId = localStorageService.getItem(STORAGE_KEY.CHAIN_ID);
       if (isConnect && walletType === WalletType.METAMASK) {
         set({ isConnect: true });
+        set({ chainId: chainId });
         await get().getAccountChangeMetamask();
         await get().getAccountMetamask();
+        await get().getChainId();
+        await get().getChainIdChangeMetamask();
       } else {
         set({ isConnect: false });
       }
@@ -64,6 +78,27 @@ const useConnector = create((set: any, get: any) => ({
         const [accountChange] = accounts as string[];
         if (accountChange) {
           set({ currentAccount: accountChange });
+        }
+      });
+    }
+  },
+  getChainId: async () => {
+    if (typeof window.ethereum !== "undefined") {
+      const chainId = await window.ethereum.request({
+        method: "eth_chainId",
+      });
+      if (chainId) {
+        localStorageService.setItem(STORAGE_KEY.CHAIN_ID, Number(chainId));
+        set({ chainId: Number(chainId) });
+      }
+    }
+  },
+  getChainIdChangeMetamask: async () => {
+    if (typeof window.ethereum !== "undefined") {
+      await window.ethereum.on("chainChanged", (chainId) => {
+        if (chainId) {
+          set({ chainId: Number(chainId) });
+          window.location.reload();
         }
       });
     }
